@@ -17,20 +17,20 @@ pipeline {
     stages {
         stage('terraform validate') {
             steps {
-                echo 'terraform -chdir=eks validate'
+                echo 'terraform -chdir=argocd validate'
                 sh 'terraform validate'
             }
         }
         stage('terraform init') {
             steps {
                 echo 'terraform init'
-                sh 'terraform -chdir=eks init -reconfigure'
+                sh 'terraform -chdir=argocd init -reconfigure'
             }
         }
         stage('terraform plan') {
             steps {
                 echo 'terraform plan'
-                sh 'terraform -chdir=eks plan'
+                sh 'terraform -chdir=argocd plan'
             }
         }
     }
