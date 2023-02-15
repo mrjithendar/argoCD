@@ -24,6 +24,6 @@ terraform {
     }
   }
 
-  backend "s3" {} // partial backend configuration
+  # backend "s3" {} // partial backend configuration
 
 }
