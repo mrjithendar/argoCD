@@ -10,3 +10,11 @@ data "terraform_remote_state" "eks" {
     # dynamodb_table       = "devops-demo.tfstate.lock"
   }
 }
+
+terraform {
+  backend "s3" {
+    bucket = "jithendar"
+    key    = "argoCDDemo/argoCD/"
+    region = "us-east-1"
+  }
+}
