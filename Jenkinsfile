@@ -30,7 +30,7 @@ pipeline {
         stage('terraform plan') {
             steps {
                 echo 'terraform plan'
-                sh 'terraform plan'
+                sh 'terraform -chdir=eks plan'
             }
         }
     }
