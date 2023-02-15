@@ -27,7 +27,7 @@ pipeline {
                 sh 'terraform -chdir=eks init -reconfigure'
             }
         }
-        stage('terraform init') {
+        stage('terraform plan') {
             steps {
                 echo 'terraform plan'
                 sh 'terraform plan'
