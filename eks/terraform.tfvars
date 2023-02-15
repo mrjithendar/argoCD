@@ -1,5 +1,17 @@
-# alb_controller_chart_name = "argoCD-Demo"
-
-
-
-
+admin_users = "jithendar"
+alb_controller_chart_name = "demo_alb_controller_chart"
+alb_controller_chart_repo = "demo_alb_controller_chart"
+alb_controller_chart_version = "demo_alb_controller_chart"
+alb_controller_iam_role = "jithendar_role"
+cluster_name = "techlurnDemo"
+developer_users = "jithendar"
+dns_hosted_zone = "jithendar.com"
+eks_managed_node_groups = "argoCDNodeGroup"
+external_dns_chart_name = "argoCDExtChartName"
+external_dns_chart_repo = "argoCDExtChartRepo"
+external_dns_chart_version = "argoCDChartVer"
+external_dns_iam_role = "jithendar_role"
+external_dns_values = "argoCDExtDNS"
+load_balancer_name = "argoCDLB"
+main_network_block = "argoCDNetworkBlock"
+name_prefix = "argoCDPrefixName"
