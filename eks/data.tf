@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket = "jithendar"
+    key    = "argoCDDemo/eks/"
+    region = "us-east-1"
+  }
+}
+
 # get all available AZs in our region
 data "aws_availability_zones" "available_azs" {
   state = "available"
