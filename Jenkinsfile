@@ -17,7 +17,7 @@ pipeline {
     stages {
         stage('terraform validate') {
             steps {
-                echo 'terraform validate'
+                echo 'terraform -chdir=eks validate'
                 sh 'terraform validate'
             }
         }
