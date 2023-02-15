@@ -23,7 +23,7 @@ terraform {
       version = "0.7.2"
     }
   }
-  backend "s3" {} // partial backend configuration
+  # backend "s3" {} // partial backend configuration
 
 }
 
