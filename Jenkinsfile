@@ -15,6 +15,12 @@ pipeline {
     // }
 
     stages {
+        stage('terraform validate') {
+            steps {
+                echo 'terraform validate'
+                sh 'terraform validate'
+            }
+        }
         stage('terraform init') {
             steps {
                 echo 'terraform init'
