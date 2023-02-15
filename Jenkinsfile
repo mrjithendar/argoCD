@@ -15,15 +15,15 @@ pipeline {
     // }
 
     stages {
-        stage('terraform fmt perform') {
-            steps {
-                echo 'terraform formatting the configuration'
-                sh '''
-                terraform fmt
-                git add .; git commit -m 'terraform fmt applied'; git push
-                '''
-            }
-        }
+        // stage('terraform fmt perform') {
+        //     steps {
+        //         echo 'terraform formatting the configuration'
+        //         sh '''
+        //         terraform fmt
+        //         git add .; git commit -m 'terraform fmt applied'; git push
+        //         '''
+        //     }
+        // }
         stage('terraform validate') {
             steps {
                 echo 'terraform -chdir=argocd validate'
