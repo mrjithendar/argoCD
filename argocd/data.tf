@@ -6,7 +6,7 @@ data "terraform_remote_state" "eks" {
     bucket = "jithendar"
     key    = "argoCDDemo/eks/"
     region = "us-east-1"
-    workspace_key_prefix = "environment"
+    # workspace_key_prefix = "environment"
     # dynamodb_table       = "devops-demo.tfstate.lock"
   }
 }
