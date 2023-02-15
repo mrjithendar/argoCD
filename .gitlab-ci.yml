@@ -1,0 +1,206 @@
+---
+stages:
+  - pre-setup
+  - code-quality
+  - validate
+  - plan
+  - apply
+  - destroy
+
+image:
+  name: hashicorp/terraform:1.3.7
+  entrypoint:
+    - env
+
+variables:
+  AWS_WEB_IDENTITY_TOKEN_FILE: /tmp/web-identity-token
+
+##############################################################################
+##                Setup OIDC Assume Role Template                          ##
+##############################################################################
+.assume_role: &assume_role
+  before_script:
+    - apk add python3
+    - apk add --update py3-pip
+    - pip3 install awscli
+    # yamllint disable rule:line-length
+    - >
+      export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+      $(aws sts assume-role-with-web-identity
+      --role-arn $AWS_ROLE_ARN
+      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      --web-identity-token $CI_JOB_JWT_V2
+      --duration-seconds 3600
+      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+      --output text))
+    # yamllint enable
+    - aws sts get-caller-identity
+
+.terraform_init_template: &terraform_init_template |-
+    terraform init -input=false -backend-config=backend.tfvars
+
+.eks_plan_template: &eks_plan_template
+  stage: plan
+  <<: *assume_role
+  script:
+    - cd eks
+    - *terraform_init_template
+    - terraform plan -out=$CI_PROJECT_DIR/eks.tfplan
+      -var-file=sample.tfvars
+      -input=false
+  artifacts:
+    paths:
+      - eks.tfplan
+
+.eks_apply_template: &eks_apply_template
+  stage: apply
+  when: manual
+  <<: *assume_role
+  script:
+    - cd eks
+    - *terraform_init_template
+    - terraform apply -input=false $CI_PROJECT_DIR/eks.tfplan
+
+.eks_destroy_template: &eks_destroy_template
+  stage: destroy
+  only:
+    variables:
+      - $PHASE == "EKS_DESTROY"
+  <<: *assume_role
+  script:
+    - cd eks
+    - *terraform_init_template
+    - terraform destroy
+      -var-file=sample.tfvars
+      -auto-approve
+
+.argocd_plan_template: &argocd_plan_template
+  when: manual
+  stage: plan
+  <<: *assume_role
+  script:
+    - cd argocd
+    - *terraform_init_template
+    - terraform plan -out=$CI_PROJECT_DIR/argocd.tfplan
+      -input=false
+  artifacts:
+    paths:
+      - argocd.tfplan
+
+.argocd_apply_template: &argocd_apply_template
+  stage: apply
+  when: manual
+  <<: *assume_role
+  script:
+    - cd argocd
+    - *terraform_init_template
+    - aws s3 ls
+    - terraform apply -input=false $CI_PROJECT_DIR/argocd.tfplan
+
+.argocd_destroy_template: &argocd_destroy_template
+  stage: destroy
+  only:
+    variables:
+      - $PHASE == "ARGOCD_DESTROY"
+  <<: *assume_role
+  script:
+    - cd argocd
+    - *terraform_init_template
+    - terraform destroy
+      -auto-approve
+
+##############################################################################
+##                          Pipeline Pre Setup                             ##
+##############################################################################
+pre_setup:
+  stage: pre-setup
+  variables:
+    BUCKET_NAME: devops-demo.tfstate
+  <<: *assume_role
+  script:
+    - aws s3 ls s3://${BUCKET_NAME} ||
+      (aws s3 mb s3://${BUCKET_NAME} --region ${AWS_DEFAULT_REGION}
+        && aws s3api put-bucket-versioning --bucket ${BUCKET_NAME}
+        --versioning-configuration Status=Enabled)
+
+##############################################################################
+##                         General Jobs for Code Quality                   ##
+##############################################################################
+
+terraform_lint:
+  stage: code-quality
+  tags:
+    - linux
+  image:
+    name: wata727/tflint:0.15.5
+    entrypoint:
+      - env
+  script:
+    - tflint
+
+terraform_fmt:
+  stage: code-quality
+  tags:
+    - linux
+  script:
+    - cd eks
+    - terraform fmt -check
+    - cd ../argocd
+    - terraform fmt -check
+
+yaml_lint:
+  stage: code-quality
+  tags:
+    - linux
+  image:
+    name: cytopia/yamllint:1.20
+    entrypoint:
+      - env
+  script:
+    - yamllint .
+
+##############################################################################
+##                             EKS Jobs                                    ##
+##############################################################################
+
+eks_validate:
+  stage: validate
+  <<: *assume_role
+  script:
+    - cd eks
+    - *terraform_init_template
+    - terraform validate
+
+eks_plan:
+  <<: *eks_plan_template
+
+eks_apply:
+  <<: *eks_apply_template
+  only:
+    - main
+
+eks_destroy:
+  <<: *eks_destroy_template
+
+##############################################################################
+##                             ArgoCD Jobs                                 ##
+##############################################################################
+
+argocd_validate:
+  stage: validate
+  <<: *assume_role
+  script:
+    - cd argocd
+    - *terraform_init_template
+    - terraform validate
+
+plan_argocd:
+  <<: *argocd_plan_template
+
+apply_argocd:
+  <<: *argocd_apply_template
+  only:
+    - main
+
+destroy_argocd:
+  <<: *argocd_destroy_template
