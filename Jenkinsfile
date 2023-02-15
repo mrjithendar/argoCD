@@ -24,12 +24,15 @@ pipeline {
         stage('terraform init') {
             steps {
                 echo 'terraform init'
-                sh '''
-                terraform -chdir=eks init -reconfigure
-                '''
+                sh 'terraform -chdir=eks init -reconfigure'
+            }
+        }
+        stage('terraform init') {
+            steps {
+                echo 'terraform plan'
+                sh 'terraform plan'
             }
         }
     }
-
 
 }
